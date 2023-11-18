@@ -1,32 +1,32 @@
 figma.showUI(__html__, { width: 280, height: 500 });
 
 figma.ui.onmessage = msg => {
-  if (msg.type === 'insert-image') {
+  if (msg.type === 'create-grid') {
     const nodes = [];
-    const node = figma.createNodeFromSvg(msg.svg);
-    const group = figma.group(node.children, figma.currentPage);
-    node.remove();
-    group.name = 'Emoji'
-    nodes.push(group);
-    if(figma.currentPage.selection.length > 0) {
-      const selection = figma.currentPage.selection[0];
-      group.x = selection.x;
-      group.y = selection.y
-      if (selection.type.toLowerCase() === 'frame' && selection.children) {
-        group.x = selection.width/2;
-        group.y = selection.height/2
-        selection.appendChild(group);
-      } else {
-        selection.parent.appendChild(group);
-        group.x = selection.x + selection.width + 10;
-        group.y = selection.y;
+    const emojis = msg.emojis; // Array of selected emojis
+    const gridRows = msg.gridRows; // Number of rows in the grid
+    const gridCols = msg.gridCols; // Number of columns in the grid
+    const spacing = msg.spacing; // Spacing between emojis
+
+    for (let row = 0; row < gridRows; row++) {
+      for (let col = 0; col < gridCols; col++) {
+        const emojiIndex = (row * gridCols + col) % emojis.length;
+        const node = figma.createNodeFromSvg(emojis[emojiIndex]);
+        const group = figma.group(node.children, figma.currentPage);
+        node.remove();
+
+        group.x = col * (group.width + spacing);
+        group.y = row * (group.height + spacing);
+
+        nodes.push(group);
       }
-      nodes.push(selection)
-    } else {
-      nodes.push(figma.currentPage)
     }
-    figma.currentPage.selection = [group];
-    figma.viewport.scrollAndZoomIntoView(nodes);
-    figma.ui.postMessage({ type: 'INSERT_SUCCESSFUL' })
+
+    if (nodes.length > 0) {
+      figma.currentPage.selection = nodes;
+      figma.viewport.scrollAndZoomIntoView(nodes);
+    }
+
+    figma.ui.postMessage({ type: 'GRID_CREATION_SUCCESS' });
   }
 };

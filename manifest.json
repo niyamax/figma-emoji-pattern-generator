@@ -1,6 +1,6 @@
 {
-  "name": "Figmoji",
-  "id": "736612173445813953",
+  "name": "Emoji Pattern",
+  "id": "1307592924492712453",
   "api": "1.0.0",
   "main": "dist/code.js",
   "ui": "dist/ui.html",

@@ -3,9 +3,11 @@ import _ from "lodash";
 import $ from "jquery";
 
 let emojiUnicodeList = [];
+let selectedEmojis = []; // Array to store selected emoji SVGs
 
 $(document).ready(function () {
     fetchEmojiUnicodes();
+    setupEventListeners(); // Setting up additional event listeners
 });
 
 // On clicking tabs
@@ -26,6 +28,32 @@ $('#emoji-container').on('scroll', function() {
         $('.container').addClass('shadow')
     }
 })
+
+// Function to setup additional event listeners
+const setupEventListeners = () => {
+    // Event listener for grid generation button
+    document.getElementById('create-grid-button').addEventListener('click', () => {
+        if (selectedEmojis.length > 0) {
+            parent.postMessage({
+                pluginMessage: {
+                    type: 'create-grid',
+                    emojis: selectedEmojis,
+                    gridRows: 5, // Set your desired grid size or make it configurable
+                    gridCols: 5,
+                    spacing: 10 // Set your desired spacing or make it configurable
+                }
+            }, '*');
+        } else {
+            alert('Please select at least one emoji.');
+        }
+    });
+
+    // Event listener for clear selection button
+    document.getElementById('clear-selection-button').addEventListener('click', () => {
+        selectedEmojis = [];
+        updateSelectedEmojisDisplay();
+    });
+}
 
 // Listing all the Emojis from the unicode list onto the view
 const populateEmojis = (list) => {
@@ -77,27 +105,26 @@ const fetchEmojiUnicodes = () => {
     });
 }
 
-// Asking figma to add selected emoji onto canvas
-const postMessage = (svg) => {
-    parent.postMessage({
-        pluginMessage: {
-            type: 'insert-image',
-            svg,
-        }
-    }, '*');
+// Function to update UI with selected emojis
+const updateSelectedEmojisDisplay = () => {
+    const container = document.getElementById('selected-emojis-container');
+    container.innerHTML = selectedEmojis.join(' '); // Display selected emojis
 }
 
-// Fetching svg code of selected Emoji
+// Fetching svg code of selected Emoji and adding to the selection
 const fetchImg = url => {
     fetch(url).then(r => r.arrayBuffer()).then(buff => {
-        let blob = new Blob([new Uint8Array(buff)], {type: "image/svg"});
-        const reader = new FileReader()
-        reader.onload = () => postMessage(reader.result);
+        let blob = new Blob([new Uint8Array(buff)], {type: "image/svg+xml"});
+        const reader = new FileReader();
+        reader.onload = () => {
+            selectedEmojis.push(reader.result);
+            updateSelectedEmojisDisplay(); // Update UI with selected emojis
+        };
         reader.readAsText(blob);
     });
 }
 
-// Function to recieve events from figma
+// Function to receive events from Figma
 onmessage = e => {
     if (!e.data) return;
 

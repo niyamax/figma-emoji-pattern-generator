@@ -8,7 +8,9 @@ body {
     flex-direction: column;
     height: 100%;
 }
+
 #emoji-container {
+    flex: 1;
     overflow: auto;
     padding: 0 10px;
     display: inline-flex;
@@ -16,6 +18,7 @@ body {
     justify-content: flex-start;
     align-items: flex-start;
 }
+
 #emoji-container .emoji {
     width: 30px;
     padding: 5px;
@@ -27,16 +30,7 @@ body {
     border-radius: 4px;
 }
 
-#error {
-    display: none;
-    height: 100%;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 0 30px;
-}
-
-#empty-search {
+#error, #empty-search {
     display: none;
     flex-direction: column;
     justify-content: center;
@@ -72,7 +66,6 @@ body {
     padding: 8px 4px 8px 6px;
     color: #000000;
     border: 2px solid #18a0fb;
-    border-radius: 2px;
 }
 
 .input::selection {
@@ -94,7 +87,7 @@ body {
 }
 
 .shadow {
-    box-shadow: 0px -10px 20px 5px grey
+    box-shadow: 0px -10px 20px 5px grey;
 }
 
 .tabs {
@@ -117,6 +110,7 @@ body {
     opacity: 0.4;
     font-weight: bold;
 }
+
 .tabs li:hover {
     opacity: 0.7;
 }
@@ -132,4 +126,34 @@ body {
 
 .tab-content.current {
     display: inherit;
+}
+
+#selected-emojis-container {
+    border-top: 1px solid #dedede;
+    padding: 10px;
+    overflow-x: auto;
+    white-space: nowrap;
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    background-color: #f9f9f9;
+}
+
+.actions button {
+    margin: 5px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: #18a0fb;
+    color: white;
+    cursor: pointer;
+}
+
+.actions button:hover {
+    background-color: #0f7ae5;
+}
+.main-content {
+    display: flex;
+    justify-content: space-between;
 }
