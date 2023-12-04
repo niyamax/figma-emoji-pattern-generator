@@ -39,4 +39,7 @@ module.exports = (env, argv) => ({
     }),
     new HtmlWebpackInlineSourcePlugin(),
   ],
+  optimization:{
+      minimize: false
+  }
 })
