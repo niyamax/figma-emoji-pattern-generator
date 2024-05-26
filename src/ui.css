@@ -12,7 +12,7 @@ body {
 #emoji-container {
     flex: 1;
     overflow: auto;
-    padding: 0 10px;
+    padding: 0 16px;
     display: inline-flex;
     flex-wrap: wrap;
     justify-content: flex-start;
@@ -20,14 +20,18 @@ body {
 }
 
 #emoji-container .emoji {
-    width: 30px;
-    padding: 5px;
+    width: 34px;
+    padding: 8px;
 }
 
 #emoji-container .emoji:hover {
     cursor: pointer;
     background-color: #f1f1f1;
-    border-radius: 4px;
+    border-radius: 8px;
+}
+.selected-emoji {
+    border: 2px solid #18a0fb; /* Blue border for selected emojis */
+    border-radius: 8px;
 }
 
 #error, #empty-search {
@@ -126,18 +130,6 @@ body {
 
 .tab-content.current {
     display: inherit;
-}
-
-#selected-emojis-container {
-    border-top: 1px solid #dedede;
-    padding: 10px;
-    overflow-x: auto;
-    white-space: nowrap;
-    display: inline-flex;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: flex-start;
-    background-color: #f9f9f9;
 }
 
 .actions button {

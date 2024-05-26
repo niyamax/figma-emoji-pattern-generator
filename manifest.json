@@ -1,5 +1,5 @@
 {
-  "name": "Emoji Pattern",
+  "name": "Emoji Pattern Generator",
   "id": "1307592924492712453",
   "api": "1.0.0",
   "main": "dist/code.js",
