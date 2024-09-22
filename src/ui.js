@@ -35,7 +35,7 @@ const setupEventListeners = () => {
         if (selectedEmojis.length > 0) {
             parent.postMessage({
                 pluginMessage: {
-                    type: 'create-grid',
+                    type: 'create-pattern',
                     emojis: selectedEmojis,
                     gridRows: 10, // Set your desired grid size or make it configurable
                     gridCols: 10,
