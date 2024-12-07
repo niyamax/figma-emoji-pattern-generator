@@ -145,7 +145,17 @@ body {
 .actions button:hover {
     background-color: #0f7ae5;
 }
+
 .main-content {
     display: flex;
     justify-content: space-between;
+}
+
+.pattern-selector {
+    margin: 10px 0;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
 }

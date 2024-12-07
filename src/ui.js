@@ -33,9 +33,11 @@ $('#emoji-container').on('scroll', function () {
 const setupEventListeners = () => {
     document.getElementById('create-grid-button').addEventListener('click', () => {
         if (selectedEmojis.length > 0) {
+            const pattern = document.getElementById('pattern-selector').value; // Get selected pattern
             parent.postMessage({
                 pluginMessage: {
                     type: 'create-pattern',
+                    pattern: pattern, // Pass the selected pattern
                     emojis: selectedEmojis,
                     gridRows: 10, // Set your desired grid size or make it configurable
                     gridCols: 10,
