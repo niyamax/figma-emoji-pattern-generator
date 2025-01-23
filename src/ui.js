@@ -4,8 +4,9 @@ import $ from "jquery";
 
 let emojiUnicodeList = [];
 let selectedEmojis = []; // Array to store selected emoji SVGs
+const emojiCache = new Map(); // For caching parsed emojis
 
-$(document).ready(function () {
+$(function() {
     fetchEmojiUnicodes();
     setupEventListeners();
 });
@@ -17,6 +18,10 @@ $(document).on("click", "ul.tabs li", function () {
     $('.tab-content').removeClass('current');
     populateEmojis(emojiUnicodeList[category]);
     $(this).addClass('current');
+    
+    // Scroll the tab into view
+    scrollTabIntoView(this);
+    
     $('#emoji-container').scrollTop(0);
 });
 
@@ -31,13 +36,28 @@ $('#emoji-container').on('scroll', function () {
 
 // Function to setup additional event listeners
 const setupEventListeners = () => {
+    // Pattern selection
+    document.querySelectorAll('.pattern-card:not(.disabled)').forEach(card => {
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.pattern-card').forEach(c => {
+                c.classList.remove('selected');
+            });
+            card.classList.add('selected');
+        });
+    });
+
     document.getElementById('create-grid-button').addEventListener('click', () => {
         if (selectedEmojis.length > 0) {
-            const pattern = document.getElementById('pattern-selector').value; // Get selected pattern
+            const selectedPattern = document.querySelector('.pattern-card.selected');
+            if (!selectedPattern) {
+                alert('Please select a pattern style.');
+                return;
+            }
+            
             parent.postMessage({
                 pluginMessage: {
                     type: 'create-pattern',
-                    pattern: pattern, // Pass the selected pattern
+                    pattern: selectedPattern.dataset.pattern,
                     emojis: selectedEmojis
                 }
             }, '*');
@@ -56,28 +76,66 @@ const setupEventListeners = () => {
 
 // Populate Emojis
 const populateEmojis = (list) => {
-    let emojiUnicodes = '';
-    for (let i = 0; i < list.length; i++) {
-        if (!emojiUnicodes.includes(list[i].char)) {
-            emojiUnicodes += list[i].char;
+    const container = document.getElementById('emoji-container');
+    
+    // Clear previous content
+    container.innerHTML = '';
+    
+    // Create document fragment for batch DOM updates
+    const fragment = document.createDocumentFragment();
+    
+    // Use Set for unique emojis
+    const uniqueEmojis = new Set(list.map(item => item.char));
+    
+    // Process emojis in chunks to prevent UI blocking
+    const processChunk = (emojis, index = 0) => {
+        const chunkSize = 50;
+        const chunk = Array.from(emojis).slice(index, index + chunkSize);
+        
+        if (chunk.length === 0) return;
+        
+        chunk.forEach(emoji => {
+            const div = document.createElement('div');
+            div.className = 'emoji-wrapper';
+            div.textContent = emoji;
+            fragment.appendChild(div);
+        });
+        
+        if (index === 0) {
+            container.appendChild(fragment);
         }
-    }
-    document.getElementById('emoji-container').textContent = emojiUnicodes;
-
-    twemoji.parse(document.getElementById('emoji-container'), {
-        folder: 'svg',
-        ext: '.svg',
-        size: 128,
-        base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/'
-    });
-
-    let imgs = document.getElementsByTagName("img");
-    for (let i = 0; i < imgs.length; i++) {
-        let src = imgs[i].src;
-        imgs[i].onclick = function () {
-            fetchImg(this, src);
-        };
-    }
+        
+        // Parse emojis with Twemoji
+        twemoji.parse(container, {
+            folder: 'svg',
+            ext: '.svg',
+            size: 128,
+            base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/',
+            callback: (icon, options) => {
+                const url = `${options.base}${options.size}/${icon}${options.ext}`;
+                if (emojiCache.has(url)) {
+                    return false; // Skip if already cached
+                }
+                return url;
+            }
+        });
+        
+        // Process next chunk
+        if (index + chunkSize < emojis.size) {
+            requestAnimationFrame(() => processChunk(emojis, index + chunkSize));
+        }
+    };
+    
+    // Start processing chunks
+    processChunk(uniqueEmojis);
+    
+    // Use event delegation for click handling
+    container.onclick = (e) => {
+        const img = e.target.closest('img');
+        if (img) {
+            fetchImg(img, img.src);
+        }
+    };
 };
 
 // Fetch Emoji Unicodes
@@ -174,3 +232,38 @@ const updatePattern = _.debounce(() => {
         }, '*');
     }
 }, 100);
+
+// Add this new function for smooth scrolling
+function scrollTabIntoView(tabElement) {
+    const container = document.querySelector('.tabs');
+    const tab = tabElement;
+    
+    // Get positions
+    const containerLeft = container.scrollLeft;
+    const containerRight = containerLeft + container.clientWidth;
+    const tabLeft = tab.offsetLeft;
+    const tabRight = tabLeft + tab.clientWidth;
+    
+    // Check if tab is not fully visible
+    if (tabLeft < containerLeft || tabRight > containerRight) {
+        // Calculate the scroll position to center the tab
+        const scrollPosition = tabLeft - (container.clientWidth / 2) + (tab.clientWidth / 2);
+        
+        // Smooth scroll to position
+        container.scrollTo({
+            left: scrollPosition,
+            behavior: 'smooth'
+        });
+    }
+}
+
+// Add scroll shadow effect
+const tabContainer = document.querySelector('.tabs');
+tabContainer.addEventListener('scroll', () => {
+    const container = document.querySelector('.container');
+    if (tabContainer.scrollLeft > 0) {
+        container.classList.add('shadow');
+    } else {
+        container.classList.remove('shadow');
+    }
+});

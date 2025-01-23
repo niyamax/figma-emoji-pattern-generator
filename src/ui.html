@@ -16,44 +16,31 @@
 
     <div id="emoji-container"></div>
 
-    <!-- Pattern selector -->
-    <div class="pattern-selector">
-        <label for="pattern-selector">Pattern Style:</label>
-        <select id="pattern-selector">
-            <option value="grid">Grid</option>
-            <option value="spiral">Spiral</option>
-            <option value="wave">Wave</option>
-            <option value="sierpinski">Sierpinski</option>
-        </select>
+    <h2 class="section-title">Select Pattern Style</h2>
+
+    <div class="pattern-row">
+        <div class="pattern-card" data-pattern="grid">
+            <div class="pattern-icon">⊞</div>
+            <span>Grid</span>
+        </div>
+        <div class="pattern-card" data-pattern="spiral">
+            <div class="pattern-icon">-></div>
+            <span>Spiral</span>
+        </div>
+        <div class="pattern-card" data-pattern="wave">
+            <div class="pattern-icon">〰</div>
+            <span>Wavy</span>
+        </div>
+        <div class="pattern-card disabled">
+            <!-- <div class="pattern-icon">⋯</div> -->
+            <span>More</span>
+            <div class="coming-soon">Coming Soon</div>
+        </div>
     </div>
 
-    <!-- Add pattern customization controls -->
-    <!-- <div class="pattern-controls">
-        <div class="control-group">
-            <label>Size:</label>
-            <input type="range" id="size-control" min="0.5" max="2" step="0.1" value="1">
-        </div>
-        
-        <div class="control-group">
-            <label>Density:</label>
-            <input type="range" id="density-control" min="1" max="50" value="20">
-        </div>
-        
-        <div class="control-group">
-            <label>Rotation:</label>
-            <input type="range" id="rotation-control" min="0" max="360" value="0">
-        </div>
-
-        <div class="control-group">
-            <label>Animation Speed:</label>
-            <input type="range" id="speed-control" min="0" max="2" step="0.1" value="1">
-        </div>
-    </div> -->
-
-    <!-- Action buttons -->
-    <div class="actions">
-        <button id="create-grid-button">Create Pattern</button>
-        <button id="clear-selection-button">Clear Selection</button>
+    <div class="action-buttons">
+        <button id="clear-selection-button" class="secondary-button">Clear Selection</button>
+        <button id="create-grid-button" class="primary-button">Generate Pattern</button>
     </div>
 
     <div id="error">

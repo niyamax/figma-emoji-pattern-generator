@@ -21,30 +21,48 @@ figma.ui.onmessage = msg => {
       color: getRandomPastelColor()
     }];
 
-    if (pattern === 'grid') {
+      if (pattern === 'grid') {
+      const spacing = 180; // Base spacing between emojis
+      const emojiSize = 100; // Approximate size of each emoji
       
-      const spacing = 100; // Adjusted to the frame
-      const gridRows = Math.floor(mainFrame.height / spacing);
-      const gridCols = Math.floor(mainFrame.width / spacing);
-      for (let row = 0; row < gridRows; row++) {
-        for (let col = 0; col < gridCols; col++) {
-          const emojiIndex = (row * gridCols + col) % emojis.length;
-          const node = figma.createNodeFromSvg(emojis[emojiIndex]);
-          const group = figma.group(node.children, mainFrame); // Add to mainFrame instead
+      // Calculate number of rows and columns
+      const cols = Math.floor(mainFrame.width / spacing);
+      const rows = Math.floor(mainFrame.height / spacing);
+      
+      // Calculate total grid dimensions
+      const totalGridWidth = (cols - 1) * spacing + emojiSize;
+      const totalGridHeight = (rows - 1) * spacing + emojiSize;
+      
+      // Calculate starting positions to center the entire grid
+      const startX = (mainFrame.width - totalGridWidth) / 2;
+      const startY = (mainFrame.height - totalGridHeight) / 2;
+      
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          // Randomly select an emoji instead of sequential selection
+          const randomEmojiIndex = Math.floor(Math.random() * emojis.length);
+          const node = figma.createNodeFromSvg(emojis[randomEmojiIndex]);
+          node.rescale(2.5);
+          const group = figma.group(node.children, mainFrame);
           node.remove();
 
-          group.x = col * spacing + spacing; // Add padding
-          group.y = row * spacing + spacing;
+          // Position each emoji relative to the grid's starting position
+          group.x = startX + (col * spacing);
+          group.y = startY + (row * spacing);
 
           nodes.push(group);
         }
       }
     } else if (pattern === 'spiral') {
-      const turns = 5;
-      const spacing = 1200;
-      const spiralCount = 15;
+      const turns = 7;
+      const spiralCount = 10;
       const minScale = 0.5;
-      const maxScale = 6.0;
+      const maxScale = 5.0;
+      const spacing = 600;
+
+      // Calculate the frame's smallest dimension to ensure spiral fits
+      const frameSize = Math.min(mainFrame.width, mainFrame.height);
+      // Adjust spacing based on frame size to ensure spiral fits
 
       for (let s = 0; s < spiralCount; s++) {
         let angle = (s * 2 * Math.PI) / spiralCount;
@@ -53,16 +71,18 @@ figma.ui.onmessage = msg => {
         for (let i = 0; i < turns * emojis.length; i++) {
           const emojiIndex = i % emojis.length;
           const node = figma.createNodeFromSvg(emojis[emojiIndex]);
-          const group = figma.group(node.children, mainFrame); // Add to mainFrame
+          const group = figma.group([...node.children], mainFrame);
           node.remove();
 
           const x = Math.cos(angle) * radius;
           const y = Math.sin(angle) * radius;
 
           const scaleFactor = minScale + (maxScale - minScale) * (i / (turns * emojis.length));
+          // Adjust scale factor to ensure elements aren't too large for the frame
+          //const adjustedScale = scaleFactor * (frameSize / 6000);
           group.rescale(scaleFactor);
 
-          group.x = x + mainFrame.width/2; // Center in frame
+          group.x = x + mainFrame.width/2;
           group.y = y + mainFrame.height/2;
 
           nodes.push(group);
@@ -128,9 +148,10 @@ figma.ui.onmessage = msg => {
     if (nodes.length > 0) {
       figma.currentPage.selection = [mainFrame];
       figma.viewport.scrollAndZoomIntoView([mainFrame]);
+      mainFrame.expanded = false;
     }
     figma.ui.postMessage({ type: 'PATTERN_CREATION_SUCCESS' });
   }
 };
 
-figma.showUI(__html__, { width: 400, height: 500 });
+figma.showUI(__html__, { width: 400, height: 600 });
