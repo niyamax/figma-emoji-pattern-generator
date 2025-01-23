@@ -168,7 +168,7 @@ body {
 }
 
 .section-title {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 600;
     color: #000;
     margin: 16px 16px 12px;
@@ -224,9 +224,10 @@ body {
 }
 
 .coming-soon {
-    font-size: 10px;
+    font-size: 12px;
     color: #666;
-    margin-top: 16px;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Hide scrollbar but keep functionality */
