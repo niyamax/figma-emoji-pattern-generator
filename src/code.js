@@ -119,7 +119,7 @@ figma.ui.onmessage = msg => {
     } else if (pattern === 'wave') {
       const width = mainFrame.width - 200; // Add padding
       const height = mainFrame.height - 200;
-      const frequency = msg.density / 100 || 0.2;
+      const frequency = msg.density / 100 || 0.55;
       const amplitude = 100;
       
       for (let x = 0; x < width; x += 100) {
@@ -132,9 +132,7 @@ figma.ui.onmessage = msg => {
           const wave = Math.sin(x * frequency) * amplitude;
           group.x = x + 100; // Add padding
           group.y = y + wave + 100;
-          
-          const size = msg.size || 1;
-          group.rescale(size * (0.8 + Math.random() * 0.4));
+          group.rescale(2);
           
           nodes.push(group);
         }
