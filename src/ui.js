@@ -38,10 +38,7 @@ const setupEventListeners = () => {
                 pluginMessage: {
                     type: 'create-pattern',
                     pattern: pattern, // Pass the selected pattern
-                    emojis: selectedEmojis,
-                    gridRows: 10, // Set your desired grid size or make it configurable
-                    gridCols: 10,
-                    spacing: 10 // Set your desired spacing or make it configurable
+                    emojis: selectedEmojis
                 }
             }, '*');
         } else {

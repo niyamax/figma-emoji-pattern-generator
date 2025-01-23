@@ -1,23 +1,40 @@
+// Add this helper function at the top
+function getRandomPastelColor() {
+  // Generate pastel colors by using higher base values
+  const r = Math.floor((Math.random() * 55) + 200); // 200-255
+  const g = Math.floor((Math.random() * 55) + 200); // 200-255
+  const b = Math.floor((Math.random() * 55) + 200); // 200-255
+  return { r: r/255, g: g/255, b: b/255 }; // Figma uses 0-1 values for RGB
+}
+
 figma.ui.onmessage = msg => {
   if (msg.type === 'create-pattern') {
     const nodes = [];
     const emojis = msg.emojis;
-    const pattern = msg.pattern; // Get the selected pattern from the message
+    const pattern = msg.pattern;
+
+    // Create main frame with pastel background
+    const mainFrame = figma.createFrame();
+    mainFrame.resize(2000, 2000);
+    mainFrame.fills = [{
+      type: 'SOLID',
+      color: getRandomPastelColor()
+    }];
 
     if (pattern === 'grid') {
-      const gridRows = msg.gridRows || 10;
-      const gridCols = msg.gridCols || 10;
-      const spacing = msg.spacing || 10;
-
+      
+      const spacing = 100; // Adjusted to the frame
+      const gridRows = Math.floor(mainFrame.height / spacing);
+      const gridCols = Math.floor(mainFrame.width / spacing);
       for (let row = 0; row < gridRows; row++) {
         for (let col = 0; col < gridCols; col++) {
           const emojiIndex = (row * gridCols + col) % emojis.length;
           const node = figma.createNodeFromSvg(emojis[emojiIndex]);
-          const group = figma.group(node.children, figma.currentPage);
+          const group = figma.group(node.children, mainFrame); // Add to mainFrame instead
           node.remove();
 
-          group.x = col * spacing;
-          group.y = row * spacing;
+          group.x = col * spacing + spacing; // Add padding
+          group.y = row * spacing + spacing;
 
           nodes.push(group);
         }
@@ -36,7 +53,7 @@ figma.ui.onmessage = msg => {
         for (let i = 0; i < turns * emojis.length; i++) {
           const emojiIndex = i % emojis.length;
           const node = figma.createNodeFromSvg(emojis[emojiIndex]);
-          const group = figma.group(node.children, figma.currentPage);
+          const group = figma.group(node.children, mainFrame); // Add to mainFrame
           node.remove();
 
           const x = Math.cos(angle) * radius;
@@ -45,8 +62,8 @@ figma.ui.onmessage = msg => {
           const scaleFactor = minScale + (maxScale - minScale) * (i / (turns * emojis.length));
           group.rescale(scaleFactor);
 
-          group.x = x + figma.viewport.center.x;
-          group.y = y + figma.viewport.center.y;
+          group.x = x + mainFrame.width/2; // Center in frame
+          group.y = y + mainFrame.height/2;
 
           nodes.push(group);
 
@@ -56,13 +73,13 @@ figma.ui.onmessage = msg => {
       }
     } else if (pattern === 'sierpinski') {
       const depth = 6;
-      const size = 2000;
+      const size = 1800; // Slightly smaller to fit in frame
 
       function drawTriangle(x, y, size, depth) {
         if (depth === 0) {
           const emojiIndex = Math.floor(Math.random() * emojis.length);
           const node = figma.createNodeFromSvg(emojis[emojiIndex]);
-          const group = figma.group(node.children, figma.currentPage);
+          const group = figma.group(node.children, mainFrame);
           node.remove();
 
           group.x = x;
@@ -78,10 +95,10 @@ figma.ui.onmessage = msg => {
         }
       }
 
-      drawTriangle(figma.viewport.center.x - size/2, figma.viewport.center.y - size*Math.sqrt(3)/4, size, depth);
+      drawTriangle(100, 100, size, depth); // Add padding from edges
     } else if (pattern === 'wave') {
-      const width = 2000;
-      const height = 2000;
+      const width = mainFrame.width - 200; // Add padding
+      const height = mainFrame.height - 200;
       const frequency = msg.density / 100 || 0.2;
       const amplitude = 100;
       
@@ -89,15 +106,13 @@ figma.ui.onmessage = msg => {
         for (let y = 0; y < height; y += 100) {
           const emojiIndex = Math.floor(Math.random() * emojis.length);
           const node = figma.createNodeFromSvg(emojis[emojiIndex]);
-          const group = figma.group(node.children, figma.currentPage);
+          const group = figma.group(node.children, mainFrame);
           node.remove();
           
-          // Create wave pattern
           const wave = Math.sin(x * frequency) * amplitude;
-          group.x = x + figma.viewport.center.x - width/2;
-          group.y = y + wave + figma.viewport.center.y - height/2;
+          group.x = x + 100; // Add padding
+          group.y = y + wave + 100;
           
-          // Apply size variation
           const size = msg.size || 1;
           group.rescale(size * (0.8 + Math.random() * 0.4));
           
@@ -106,11 +121,16 @@ figma.ui.onmessage = msg => {
       }
     }
 
+    // Center the main frame
+    mainFrame.x = figma.viewport.center.x - mainFrame.width/2;
+    mainFrame.y = figma.viewport.center.y - mainFrame.height/2;
+
     if (nodes.length > 0) {
-      figma.currentPage.selection = nodes;
-      figma.viewport.scrollAndZoomIntoView(nodes);
+      figma.currentPage.selection = [mainFrame];
+      figma.viewport.scrollAndZoomIntoView([mainFrame]);
     }
     figma.ui.postMessage({ type: 'PATTERN_CREATION_SUCCESS' });
   }
 };
+
 figma.showUI(__html__, { width: 400, height: 500 });
