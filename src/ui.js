@@ -53,6 +53,8 @@ const setupEventListeners = () => {
         $('.selected-emoji').removeClass('selected-emoji');
         selectedEmojis = [];
     });
+
+    setupPatternControls();
 };
 
 // Populate Emojis
@@ -91,6 +93,10 @@ const fetchEmojiUnicodes = () => {
                 return emoji.category.substr(0, emoji.category.indexOf('(')).trim();
             });
 
+            // Filter out the Component category
+            delete emojiUnicodeList['Component'];
+
+            // Create tabs for each category
             for (const key in emojiUnicodeList) {
                 $('#tab-list').append('<li class="tab-link" data-tab="' + key + '">' + key + '</li>');
             }
@@ -133,3 +139,41 @@ onmessage = e => {
     const data = e.data.pluginMessage.data;
     const type = e.data.pluginMessage.type;
 };
+
+const setupPatternControls = () => {
+    const patternSelector = document.getElementById('pattern-selector');
+    const controls = document.querySelector('.pattern-controls');
+    
+    patternSelector.addEventListener('change', (e) => {
+        // Show/hide relevant controls based on pattern
+        const pattern = e.target.value;
+        if (pattern === 'floating' || pattern === 'wave') {
+            controls.style.display = 'block';
+        } else {
+            controls.style.display = 'none';
+        }
+    });
+    
+    // Update pattern parameters when controls change
+    document.getElementById('size-control').addEventListener('input', updatePattern);
+    document.getElementById('density-control').addEventListener('input', updatePattern);
+    document.getElementById('rotation-control').addEventListener('input', updatePattern);
+    document.getElementById('speed-control').addEventListener('input', updatePattern);
+};
+
+const updatePattern = _.debounce(() => {
+    if (selectedEmojis.length > 0) {
+        const pattern = document.getElementById('pattern-selector').value;
+        parent.postMessage({
+            pluginMessage: {
+                type: 'create-pattern',
+                pattern: pattern,
+                emojis: selectedEmojis,
+                size: parseFloat(document.getElementById('size-control').value),
+                density: parseInt(document.getElementById('density-control').value),
+                rotation: parseInt(document.getElementById('rotation-control').value),
+                speed: parseFloat(document.getElementById('speed-control').value)
+            }
+        }, '*');
+    }
+}, 100);
