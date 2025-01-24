@@ -206,8 +206,8 @@ const fetchEmojiUnicodes = () => {
                 // Skip variation selectors and zero-width joiners when alone
                 if (emoji.char.match(/[\uFE0F\u200D]/)) return false;
                 
-                // Skip skin tone modifiers when alone
-                if (emoji.char.match(/[\u{1F3FB}-\u{1F3FF}]/u)) return false;
+                // Skip skin tone modifiers when they appear alone (not as part of another emoji)
+                if (emoji.char.length === 2 && emoji.char.match(/[\u{1F3FB}-\u{1F3FF}]/u)) return false;
 
                 // Skip Component category
                 if (emoji.category.includes('Component')) return false;
