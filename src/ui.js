@@ -46,6 +46,11 @@ const setupEventListeners = () => {
         });
     });
 
+    // Ensure grid pattern is selected by default if none selected
+    if (!document.querySelector('.pattern-card.selected')) {
+        document.querySelector('[data-pattern="grid"]').classList.add('selected');
+    }
+
     document.getElementById('create-grid-button').addEventListener('click', () => {
         if (selectedEmojis.length > 0) {
             const selectedPattern = document.querySelector('.pattern-card.selected');
