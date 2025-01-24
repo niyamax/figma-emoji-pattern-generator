@@ -5,6 +5,7 @@ import $ from "jquery";
 let emojiUnicodeList = [];
 let selectedEmojis = []; // Array to store selected emoji SVGs
 const emojiCache = new Map(); // For caching parsed emojis
+let selectedEmojiIds = new Set(); // Track selected emoji IDs
 
 $(function() {
     fetchEmojiUnicodes();
@@ -74,6 +75,7 @@ const setupEventListeners = () => {
     document.getElementById('clear-selection-button').addEventListener('click', () => {
         $('.selected-emoji').removeClass('selected-emoji');
         selectedEmojis = [];
+        selectedEmojiIds.clear();
     });
 
     setupPatternControls();
@@ -110,9 +112,17 @@ const populateEmojis = (list) => {
             base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/',
             callback: (icon, options) => {
                 const url = `${options.base}${options.size}/${icon}${options.ext}`;
+                // Check if this emoji was previously selected
+                if (selectedEmojiIds.has(icon)) {
+                    setTimeout(() => {
+                        const img = container.querySelector(`img[src*="${icon}"]`);
+                        if (img) {
+                            img.classList.add('selected-emoji');
+                        }
+                    }, 0);
+                }
                 if (!emojiCache.has(url)) {
                     emojiCache.set(url, true);
-                    return url;
                 }
                 return url;
             }
@@ -146,7 +156,42 @@ const populateEmojis = (list) => {
     };
 };
 
-// Update toggle selection to handle SVG content directly
+// Update fetchImg function to handle SVG content consistently
+const fetchImg = (emojiElement, url) => {
+    fetch(url).then(r => r.text())  // Use text() instead of arrayBuffer()
+        .then(svgContent => {
+            toggleEmojiSelection(emojiElement, svgContent);
+        })
+        .catch(err => console.error('Error fetching SVG:', err));
+};
+
+// Update toggleEmojiSelection function
+const toggleEmojiSelection = (emojiElement, svgContent) => {
+    const isSelected = $(emojiElement).hasClass('selected-emoji');
+    const iconMatch = emojiElement.src.match(/([0-9a-f-]+)\.svg/);
+    
+    if (iconMatch) {
+        const iconId = iconMatch[1];
+        if (isSelected) {
+            $(emojiElement).removeClass('selected-emoji');
+            selectedEmojiIds.delete(iconId);
+            // Remove the exact SVG content
+            const index = selectedEmojis.findIndex(svg => svg === svgContent);
+            if (index !== -1) {
+                selectedEmojis.splice(index, 1);
+            }
+            
+            // Deselect other instances
+            document.querySelectorAll(`img[src*="${iconId}"]`).forEach(img => {
+                img.classList.remove('selected-emoji');
+            });
+        } else {
+            $(emojiElement).addClass('selected-emoji');
+            selectedEmojiIds.add(iconId);
+            selectedEmojis.push(svgContent);
+        }
+    }
+};
 
 // Fetch Emoji Unicodes
 const fetchEmojiUnicodes = () => {
@@ -186,30 +231,6 @@ const fetchEmojiUnicodes = () => {
             document.getElementById('emoji-container').setAttribute('style', 'display:none');
             document.getElementById('error').setAttribute('style', 'display:flex');
         });
-};
-
-// Toggle Emoji Selection
-const toggleEmojiSelection = (emojiElement, svgContent) => {
-    const isSelected = $(emojiElement).hasClass('selected-emoji');
-    if (isSelected) {
-        $(emojiElement).removeClass('selected-emoji');
-        selectedEmojis = selectedEmojis.filter(e => e !== svgContent);
-    } else {
-        $(emojiElement).addClass('selected-emoji');
-        selectedEmojis.push(svgContent);
-    }
-};
-
-// Fetch SVG code of clicked Emoji and toggle its selection
-const fetchImg = (emojiElement, url) => {
-    fetch(url).then(r => r.arrayBuffer()).then(buff => {
-        let blob = new Blob([new Uint8Array(buff)], { type: "image/svg+xml" });
-        const reader = new FileReader();
-        reader.onload = () => {
-            toggleEmojiSelection(emojiElement, reader.result);
-        };
-        reader.readAsText(blob);
-    });
 };
 
 // Function to receive events from Figma
