@@ -83,7 +83,7 @@ const setupEventListeners = () => {
 const populateEmojis = (list) => {
     const container = document.getElementById('emoji-container');
     container.innerHTML = '';
-    
+
     // Store full list for pagination
     const uniqueEmojis = Array.from(new Set(list.map(item => item.char)));
     let currentPage = 0;
@@ -153,13 +153,27 @@ const fetchEmojiUnicodes = () => {
     fetch("https://unpkg.com/emoji.json@13.1.0/emoji.json")
         .then(res => res.json())
         .then((emojiList) => {
-            emojiUnicodeList = emojiList;
+            // Filter out unwanted emojis and sequences
+            emojiList = emojiList.filter(emoji => {
+                // Skip empty or invalid emojis
+                if (!emoji.char || typeof emoji.char !== 'string') return false;
+                
+                // Skip variation selectors and zero-width joiners when alone
+                if (emoji.char.match(/[\uFE0F\u200D]/)) return false;
+                
+                // Skip skin tone modifiers when alone
+                if (emoji.char.match(/[\u{1F3FB}-\u{1F3FF}]/u)) return false;
+
+                // Skip Component category
+                if (emoji.category.includes('Component')) return false;
+
+                return true;
+            });
+
+            // Group by category
             emojiUnicodeList = _.groupBy(emojiList, (emoji) => {
                 return emoji.category.substr(0, emoji.category.indexOf('(')).trim();
             });
-
-            // Filter out the Component category
-            delete emojiUnicodeList['Component'];
 
             // Create tabs for each category
             for (const key in emojiUnicodeList) {
