@@ -77,35 +77,27 @@ const setupEventListeners = () => {
 // Populate Emojis
 const populateEmojis = (list) => {
     const container = document.getElementById('emoji-container');
-    
-    // Clear previous content
     container.innerHTML = '';
     
-    // Create document fragment for batch DOM updates
-    const fragment = document.createDocumentFragment();
+    // Store full list for pagination
+    const uniqueEmojis = Array.from(new Set(list.map(item => item.char)));
+    let currentPage = 0;
+    const itemsPerPage = 50;
     
-    // Use Set for unique emojis
-    const uniqueEmojis = new Set(list.map(item => item.char));
-    
-    // Process emojis in chunks to prevent UI blocking
-    const processChunk = (emojis, index = 0) => {
-        const chunkSize = 50;
-        const chunk = Array.from(emojis).slice(index, index + chunkSize);
+    const loadMoreEmojis = () => {
+        const start = currentPage * itemsPerPage;
+        const end = start + itemsPerPage;
+        const pageEmojis = uniqueEmojis.slice(start, end);
         
-        if (chunk.length === 0) return;
+        if (pageEmojis.length === 0) return;
         
-        chunk.forEach(emoji => {
+        pageEmojis.forEach(emoji => {
             const div = document.createElement('div');
             div.className = 'emoji-wrapper';
             div.textContent = emoji;
-            fragment.appendChild(div);
+            container.appendChild(div);
         });
         
-        if (index === 0) {
-            container.appendChild(fragment);
-        }
-        
-        // Parse emojis with Twemoji
         twemoji.parse(container, {
             folder: 'svg',
             ext: '.svg',
@@ -113,30 +105,43 @@ const populateEmojis = (list) => {
             base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/',
             callback: (icon, options) => {
                 const url = `${options.base}${options.size}/${icon}${options.ext}`;
-                if (emojiCache.has(url)) {
-                    return false; // Skip if already cached
+                if (!emojiCache.has(url)) {
+                    emojiCache.set(url, true);
+                    return url;
                 }
                 return url;
             }
         });
         
-        // Process next chunk
-        if (index + chunkSize < emojis.size) {
-            requestAnimationFrame(() => processChunk(emojis, index + chunkSize));
-        }
+        currentPage++;
     };
     
-    // Start processing chunks
-    processChunk(uniqueEmojis);
+    // Initial load
+    loadMoreEmojis();
     
-    // Use event delegation for click handling
+    // Scroll handler for infinite loading
+    container.onscroll = _.throttle(() => {
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        if (scrollTop + clientHeight >= scrollHeight - 100) {
+            loadMoreEmojis();
+        }
+    }, 200);
+    
+    // Click handler using event delegation
     container.onclick = (e) => {
-        const img = e.target.closest('img');
-        if (img) {
-            fetchImg(img, img.src);
+        const emojiWrapper = e.target.closest('img');
+        if (emojiWrapper) {
+            fetch(emojiWrapper.src)
+                .then(r => r.text())
+                .then(svgContent => {
+                    toggleEmojiSelection(emojiWrapper, svgContent);
+                })
+                .catch(err => console.error('Error fetching SVG:', err));
         }
     };
 };
+
+// Update toggle selection to handle SVG content directly
 
 // Fetch Emoji Unicodes
 const fetchEmojiUnicodes = () => {
@@ -165,14 +170,14 @@ const fetchEmojiUnicodes = () => {
 };
 
 // Toggle Emoji Selection
-const toggleEmojiSelection = (emojiElement, emojiSVG) => {
+const toggleEmojiSelection = (emojiElement, svgContent) => {
     const isSelected = $(emojiElement).hasClass('selected-emoji');
     if (isSelected) {
         $(emojiElement).removeClass('selected-emoji');
-        selectedEmojis = selectedEmojis.filter(e => e !== emojiSVG);
+        selectedEmojis = selectedEmojis.filter(e => e !== svgContent);
     } else {
         $(emojiElement).addClass('selected-emoji');
-        selectedEmojis.push(emojiSVG);
+        selectedEmojis.push(svgContent);
     }
 };
 
