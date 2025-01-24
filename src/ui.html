@@ -16,20 +16,30 @@
 
     <div id="emoji-container"></div>
 
-    <!-- Pattern selector -->
-    <div class="pattern-selector">
-        <label for="pattern-selector">Select Pattern:</label>
-        <select id="pattern-selector">
-            <option value="grid">Grid</option>
-            <option value="spiral">Spiral</option>
-            <option value="sierpinski">Sierpinski</option>
-        </select>
+    <h2 class="section-title">Select a Pattern Style</h2>
+
+    <div class="pattern-row">
+        <div class="pattern-card selected" data-pattern="grid">
+            <div class="pattern-icon">🎛️</div>
+            <span>Grid</span>
+        </div>
+        <div class="pattern-card" data-pattern="spiral">
+            <div class="pattern-icon">🌀</div>
+            <span>Spiral</span>
+        </div>
+        <div class="pattern-card" data-pattern="wave">
+            <div class="pattern-icon">🌊</div>
+            <span>Wavy</span>
+        </div>
+        <div class="pattern-card disabled">
+            <!-- <div class="pattern-icon">⋯</div> -->
+            <div class="coming-soon">More patterns on the way!</span>
+        </div>
     </div>
 
-    <!-- Action buttons -->
-    <div class="actions">
-        <button id="create-grid-button">Create Pattern</button>
-        <button id="clear-selection-button">Clear Selection</button>
+    <div class="action-buttons">
+        <button id="clear-selection-button" class="secondary-button">Clear Selection</button>
+        <button id="create-grid-button" class="primary-button">Generate Pattern</button>
     </div>
 
     <div id="error">
