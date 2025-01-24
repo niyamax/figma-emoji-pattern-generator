@@ -1,10 +1,8 @@
-<img src="https://github.com/nitinrgupta/figmoji/blob/master/assets/icon.png" alt="icon" height="50"></img>
-# figmoji
+# Emoji Pattern Generator Plugin for Figma
 
-A figma plugin to add emojis onto your designs seamlessly
+A Figma plugin that generates beautiful patterns using emojis. Create unique designs with different pattern styles and emoji combinations.
 
-![](https://github.com/nitinrgupta/figmoji/blob/master/assets/banner.png)
-
+![Emoji Pattern Generator Plugin](./assets/banner.png)
 
 
 ## Development
@@ -25,3 +23,6 @@ Build for production
 ```
 npx webpack --mode=production
 ```
+
+## License
+MIT License
