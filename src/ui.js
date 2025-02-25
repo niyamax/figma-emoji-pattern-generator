@@ -1,11 +1,20 @@
 import './ui.css';
 import _ from "lodash";
 import $ from "jquery";
+import figmaSvgContent from '../assets/additional_emojis/figma.svg?raw';
 
 let emojiUnicodeList = [];
 let selectedEmojis = []; // Array to store selected emoji SVGs
 const emojiCache = new Map(); // For caching parsed emojis
 let selectedEmojiIds = new Set(); // Track selected emoji IDs
+
+// Create a data URI from the SVG content
+const figmaSvgDataUri = `data:image/svg+xml;base64,${btoa(figmaSvgContent)}`;
+
+// Define design tools emojis with the data URI
+const designToolsEmojis = [
+  { id: 'figma', dataUri: figmaSvgDataUri, svgContent: figmaSvgContent, alt: 'Figma' }
+];
 
 $(function() {
     fetchEmojiUnicodes();
@@ -86,65 +95,135 @@ const populateEmojis = (list) => {
     const container = document.getElementById('emoji-container');
     container.innerHTML = '';
 
-    // Store full list for pagination
-    const uniqueEmojis = Array.from(new Set(list.map(item => item.char)));
-    let currentPage = 0;
-    const itemsPerPage = 50;
+    if (!list || list.length === 0) return;
     
-    const loadMoreEmojis = () => {
-        const start = currentPage * itemsPerPage;
-        const end = start + itemsPerPage;
-        const pageEmojis = uniqueEmojis.slice(start, end);
+    // Create a regular emoji list and a custom emoji list
+    const regularEmojis = list.filter(emoji => emoji.char);
+    const customEmojis = list.filter(emoji => emoji.dataUri || emoji.src);
+    
+    // Handle regular emojis first
+    if (regularEmojis.length > 0) {
+        // Store full list for pagination
+        const uniqueEmojis = Array.from(new Set(regularEmojis.map(item => item.char)));
+        let currentPage = 0;
+        const itemsPerPage = 50;
         
-        if (pageEmojis.length === 0) return;
+        const loadMoreEmojis = () => {
+            const start = currentPage * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageEmojis = uniqueEmojis.slice(start, end);
+            
+            if (pageEmojis.length === 0) return;
+            
+            pageEmojis.forEach(emoji => {
+                const div = document.createElement('div');
+                div.className = 'emoji-wrapper';
+                div.textContent = emoji;
+                container.appendChild(div);
+            });
+            
+            twemoji.parse(container, {
+                folder: 'svg',
+                ext: '.svg',
+                size: 128,
+                base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/',
+                callback: (icon, options) => {
+                    const url = `${options.base}${options.size}/${icon}${options.ext}`;
+                    // Check if this emoji was previously selected
+                    if (selectedEmojiIds.has(icon)) {
+                        setTimeout(() => {
+                            const img = container.querySelector(`img[src*="${icon}"]`);
+                            if (img) {
+                                img.classList.add('selected-emoji');
+                            }
+                        }, 0);
+                    }
+                    if (!emojiCache.has(url)) {
+                        emojiCache.set(url, true);
+                    }
+                    return url;
+                }
+            });
+            
+            currentPage++;
+        };
         
-        pageEmojis.forEach(emoji => {
+        // Initial load
+        loadMoreEmojis();
+        
+        // Add scroll handler for regular emojis
+        container.onscroll = _.throttle(() => {
+            const { scrollTop, scrollHeight, clientHeight } = container;
+            if (scrollTop + clientHeight >= scrollHeight - 100) {
+                loadMoreEmojis();
+            }
+        }, 200);
+    }
+    
+    // Now handle custom emojis - append them at the top
+    if (customEmojis.length > 0) {
+        const customContainer = document.createElement('div');
+        customContainer.className = 'custom-emojis-container';
+        customContainer.style.display = 'flex';
+        customContainer.style.flexWrap = 'wrap';
+        customContainer.style.justifyContent = 'flex-start';
+        
+        customEmojis.forEach(emoji => {
             const div = document.createElement('div');
             div.className = 'emoji-wrapper';
-            div.textContent = emoji;
-            container.appendChild(div);
-        });
-        
-        twemoji.parse(container, {
-            folder: 'svg',
-            ext: '.svg',
-            size: 128,
-            base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/',
-            callback: (icon, options) => {
-                const url = `${options.base}${options.size}/${icon}${options.ext}`;
-                // Check if this emoji was previously selected
-                if (selectedEmojiIds.has(icon)) {
-                    setTimeout(() => {
-                        const img = container.querySelector(`img[src*="${icon}"]`);
-                        if (img) {
-                            img.classList.add('selected-emoji');
-                        }
-                    }, 0);
-                }
-                if (!emojiCache.has(url)) {
-                    emojiCache.set(url, true);
-                }
-                return url;
+            
+            const img = document.createElement('img');
+            img.src = emoji.dataUri || emoji.src;
+            img.alt = emoji.alt || emoji.id;
+            img.dataset.emojiId = emoji.id;
+            
+            // Add the 'emoji' class to match Twitter emojis styling
+            img.className = 'emoji';
+            
+            if (selectedEmojiIds.has(emoji.id)) {
+                img.classList.add('selected-emoji');
             }
+            
+            img.onclick = function() {
+                // Use the already available SVG content
+                const svgContent = emoji.svgContent;
+                
+                // Toggle selection
+                if (img.classList.contains('selected-emoji')) {
+                    img.classList.remove('selected-emoji');
+                    selectedEmojiIds.delete(emoji.id);
+                    
+                    // Remove from selectedEmojis
+                    const index = selectedEmojis.findIndex(svg => svg === svgContent);
+                    if (index !== -1) {
+                        selectedEmojis.splice(index, 1);
+                    }
+                } else {
+                    img.classList.add('selected-emoji');
+                    selectedEmojiIds.add(emoji.id);
+                    selectedEmojis.push(svgContent);
+                }
+            };
+            
+            img.onload = function() {
+                console.log(`Figma emoji dimensions - Natural: ${img.naturalWidth}x${img.naturalHeight}, Rendered: ${img.width}x${img.height}, Style: ${getComputedStyle(img).width}x${getComputedStyle(img).height}`);
+            };
+            
+            div.appendChild(img);
+            customContainer.appendChild(div);
         });
         
-        currentPage++;
-    };
-    
-    // Initial load
-    loadMoreEmojis();
-    
-    // Scroll handler for infinite loading
-    container.onscroll = _.throttle(() => {
-        const { scrollTop, scrollHeight, clientHeight } = container;
-        if (scrollTop + clientHeight >= scrollHeight - 100) {
-            loadMoreEmojis();
+        // Insert custom emojis at the top of the container
+        if (container.firstChild) {
+            container.insertBefore(customContainer, container.firstChild);
+        } else {
+            container.appendChild(customContainer);
         }
-    }, 200);
+    }
     
-    // Click handler using event delegation
+    // Click handler for regular emojis using event delegation
     container.onclick = (e) => {
-        const emojiWrapper = e.target.closest('img');
+        const emojiWrapper = e.target.closest('img:not([data-emoji-id])');
         if (emojiWrapper) {
             fetch(emojiWrapper.src)
                 .then(r => r.text())
@@ -219,6 +298,15 @@ const fetchEmojiUnicodes = () => {
             emojiUnicodeList = _.groupBy(emojiList, (emoji) => {
                 return emoji.category.substr(0, emoji.category.indexOf('(')).trim();
             });
+
+            // Add the Figma emoji to Activities instead
+            if (emojiUnicodeList['Activities']) {
+                // Add our Figma emoji to the Activities category
+                emojiUnicodeList['Activities'] = emojiUnicodeList['Activities'].concat(designToolsEmojis);
+            } else {
+                // If Activities category doesn't exist for some reason, create it
+                emojiUnicodeList['Activities'] = designToolsEmojis;
+            }
 
             // Create tabs for each category
             for (const key in emojiUnicodeList) {
@@ -312,3 +400,26 @@ tabContainer.addEventListener('scroll', () => {
         container.classList.remove('shadow');
     }
 });
+
+// New function for direct emoji selection without fetching
+const toggleDirectEmojiSelection = (emojiElement, svgContent, emojiId) => {
+    console.log("Toggling selection for:", emojiId); // Debug log
+    
+    const isSelected = emojiElement.classList.contains('selected-emoji');
+    
+    if (isSelected) {
+        emojiElement.classList.remove('selected-emoji');
+        selectedEmojiIds.delete(emojiId);
+        // Remove the SVG content
+        const index = selectedEmojis.findIndex(svg => svg === svgContent);
+        if (index !== -1) {
+            selectedEmojis.splice(index, 1);
+        }
+    } else {
+        emojiElement.classList.add('selected-emoji');
+        selectedEmojiIds.add(emojiId);
+        selectedEmojis.push(svgContent);
+    }
+    
+    console.log('Selected emojis count:', selectedEmojis.length);
+};
