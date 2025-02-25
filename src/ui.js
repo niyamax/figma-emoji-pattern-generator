@@ -8,7 +8,7 @@ const emojiCache = new Map(); // For caching parsed emojis
 let selectedEmojiIds = new Set(); // Track selected emoji IDs
 
 // Replace the designToolsEmojis definition with inline SVG content
-const figmaSvgContent = `<svg width="61" height="90" viewBox="0 0 61 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+const figmaSvgContent = `<svg width="23.82" height="35.14" viewBox="0 0 61 90" fill="none" xmlns="http://www.w3.org/2000/svg">
   <g clip-path="url(#clip0_57_8)">
   <path d="M15.5 90C23.78 90 30.5 83.28 30.5 75V60H15.5C7.22 60 0.5 66.72 0.5 75C0.5 83.28 7.22 90 15.5 90Z" fill="#0ACF83"/>
   <path d="M0.5 45C0.5 36.72 7.22 30 15.5 30H30.5V60H15.5C7.22 60 0.5 53.28 0.5 45Z" fill="#A259FF"/>
@@ -131,8 +131,16 @@ const populateEmojis = (list) => {
             img.src = emoji.dataUri;
             img.alt = emoji.alt || emoji.id;
             img.dataset.emojiId = emoji.id;
-            img.width = 42;
-            img.height = 42;
+            
+            // Calculate proper dimensions to maintain aspect ratio
+            // Original SVG is 61x90, we want to match the standard emoji size of 42px
+            // while preserving the aspect ratio
+            const aspectRatio = 61/90;
+            const height = 42; // Match standard emoji height
+            const width = Math.round(height * aspectRatio); // ~28px
+            
+            img.width = width;
+            img.height = height;
             img.style.cursor = 'pointer';
             img.style.padding = '8px';
             
@@ -220,7 +228,7 @@ const populateEmojis = (list) => {
                         console.error("Error loading SVG:", err);
                         
                         // Fallback - use the SVG content we already have
-                        const svgContent = `<svg width="61" height="90" viewBox="0 0 61 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        const svgContent = `<svg width="30" height="45" viewBox="0 0 61 90" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <g clip-path="url(#clip0_57_8)">
                             <path d="M15.5 90C23.78 90 30.5 83.28 30.5 75V60H15.5C7.22 60 0.5 66.72 0.5 75C0.5 83.28 7.22 90 15.5 90Z" fill="#0ACF83"/>
                             <path d="M0.5 45C0.5 36.72 7.22 30 15.5 30H30.5V60H15.5C7.22 60 0.5 53.28 0.5 45Z" fill="#A259FF"/>
