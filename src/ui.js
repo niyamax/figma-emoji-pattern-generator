@@ -95,140 +95,16 @@ const populateEmojis = (list) => {
     const container = document.getElementById('emoji-container');
     container.innerHTML = '';
 
-    // Check if we're dealing with custom emojis with dataUri (our design tools)
-    if (list && list.length > 0 && list[0].dataUri) {
-        
-        list.forEach(emoji => {
-            const div = document.createElement('div');
-            div.className = 'emoji-wrapper';
-            
-            const img = document.createElement('img');
-            img.src = emoji.dataUri;
-            img.alt = emoji.alt || emoji.id;
-            img.dataset.emojiId = emoji.id;
-            
-            // Calculate proper dimensions to maintain aspect ratio
-            // Original SVG is 61x90, we want to match the standard emoji size of 42px
-            // while preserving the aspect ratio
-            const aspectRatio = 61/90;
-            const height = 42; // Match standard emoji height
-            const width = Math.round(height * aspectRatio); // ~28px
-            
-            img.width = width;
-            img.height = height;
-            img.style.cursor = 'pointer';
-            img.style.padding = '8px';
-            
-            if (selectedEmojiIds.has(emoji.id)) {
-                img.classList.add('selected-emoji');
-            }
-            
-            img.onclick = function() {
-                console.log("Custom emoji clicked:", emoji.id);
-                
-                // Use the already available SVG content
-                const svgContent = emoji.svgContent;
-                
-                // Toggle selection
-                if (img.classList.contains('selected-emoji')) {
-                    img.classList.remove('selected-emoji');
-                    selectedEmojiIds.delete(emoji.id);
-                    
-                    // Remove from selectedEmojis
-                    const index = selectedEmojis.findIndex(svg => svg === svgContent);
-                    if (index !== -1) {
-                        selectedEmojis.splice(index, 1);
-                    }
-                } else {
-                    img.classList.add('selected-emoji');
-                    selectedEmojiIds.add(emoji.id);
-                    selectedEmojis.push(svgContent);
-                }
-                
-                console.log('Selected emojis count:', selectedEmojis.length);
-            };
-            
-            div.appendChild(img);
-            container.appendChild(div);
-        });
-    }
-    // Handle regular emojis
-    else if (list && list.length > 0 && list[0].src) {
-        console.log("Loading custom emojis:", list); // Debug log
-        
-        // These are custom emojis with src property
-        list.forEach(emoji => {
-            const div = document.createElement('div');
-            div.className = 'emoji-wrapper';
-            
-            // Create an image element for the SVG
-            const img = document.createElement('img');
-            
-            // Use an absolute path that works with Figma plugin architecture
-            // The path should be relative to the manifest.json file
-            img.src = emoji.src;
-            img.alt = emoji.alt || emoji.id;
-            img.dataset.emojiId = emoji.id;
-            img.width = 42;  // Match size with other emojis
-            img.height = 42;
-            img.style.cursor = 'pointer';
-            img.style.padding = '8px';
-            
-            // Check if this emoji was previously selected
-            if (selectedEmojiIds.has(emoji.id)) {
-                img.classList.add('selected-emoji');
-            }
-            
-            // Direct click handler on the image
-            img.addEventListener('click', function() {
-                console.log("Custom emoji clicked:", emoji.id); // Debug log
-                
-                // For custom emojis, we'll use a hardcoded path to the SVG file
-                const pluginDir = figma.root ? figma.root.getPluginData('dir') : '';
-                const svgPath = `${pluginDir}/assets/additional_emojis/figma.svg`;
-                
-                // Fetch the SVG content directly
-                fetch(emoji.src)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`Failed to load SVG: ${response.status} ${response.statusText}`);
-                        }
-                        return response.text();
-                    })
-                    .then(svgContent => {
-                        console.log("SVG content loaded, length:", svgContent.length); // Debug log
-                        toggleDirectEmojiSelection(img, svgContent, emoji.id);
-                    })
-                    .catch(err => {
-                        console.error("Error loading SVG:", err);
-                        
-                        // Fallback - use the SVG content we already have
-                        const svgContent = `<svg width="30" height="45" viewBox="0 0 61 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <g clip-path="url(#clip0_57_8)">
-                            <path d="M15.5 90C23.78 90 30.5 83.28 30.5 75V60H15.5C7.22 60 0.5 66.72 0.5 75C0.5 83.28 7.22 90 15.5 90Z" fill="#0ACF83"/>
-                            <path d="M0.5 45C0.5 36.72 7.22 30 15.5 30H30.5V60H15.5C7.22 60 0.5 53.28 0.5 45Z" fill="#A259FF"/>
-                            <path d="M0.5 15C0.5 6.72 7.22 0 15.5 0H30.5V30H15.5C7.22 30 0.5 23.28 0.5 15Z" fill="#F24E1E"/>
-                            <path d="M30.5 0H45.5C53.78 0 60.5 6.72 60.5 15C60.5 23.28 53.78 30 45.5 30H30.5V0Z" fill="#FF7262"/>
-                            <path d="M60.5 45C60.5 53.28 53.78 60 45.5 60C37.22 60 30.5 53.28 30.5 45C30.5 36.72 37.22 30 45.5 30C53.78 30 60.5 36.72 60.5 45Z" fill="#1ABCFE"/>
-                            </g>
-                            <defs>
-                            <clipPath id="clip0_57_8">
-                            <rect width="60.012" height="90" fill="white" transform="translate(0.493896)"/>
-                            </clipPath>
-                            </defs>
-                            </svg>`;
-                        
-                        toggleDirectEmojiSelection(img, svgContent, emoji.id);
-                    });
-            });
-            
-            div.appendChild(img);
-            container.appendChild(div);
-        });
-    } else {
-        // Regular twemoji handling
+    if (!list || list.length === 0) return;
+    
+    // Create a regular emoji list and a custom emoji list
+    const regularEmojis = list.filter(emoji => emoji.char);
+    const customEmojis = list.filter(emoji => emoji.dataUri || emoji.src);
+    
+    // Handle regular emojis first
+    if (regularEmojis.length > 0) {
         // Store full list for pagination
-        const uniqueEmojis = Array.from(new Set(list.map(item => item.char)));
+        const uniqueEmojis = Array.from(new Set(regularEmojis.map(item => item.char)));
         let currentPage = 0;
         const itemsPerPage = 50;
         
@@ -275,27 +151,88 @@ const populateEmojis = (list) => {
         // Initial load
         loadMoreEmojis();
         
-        // Scroll handler for infinite loading
+        // Add scroll handler for regular emojis
         container.onscroll = _.throttle(() => {
             const { scrollTop, scrollHeight, clientHeight } = container;
             if (scrollTop + clientHeight >= scrollHeight - 100) {
                 loadMoreEmojis();
             }
         }, 200);
-        
-        // Click handler using event delegation
-        container.onclick = (e) => {
-            const emojiWrapper = e.target.closest('img');
-            if (emojiWrapper) {
-                fetch(emojiWrapper.src)
-                    .then(r => r.text())
-                    .then(svgContent => {
-                        toggleEmojiSelection(emojiWrapper, svgContent);
-                    })
-                    .catch(err => console.error('Error fetching SVG:', err));
-            }
-        };
     }
+    
+    // Now handle custom emojis - append them at the top
+    if (customEmojis.length > 0) {
+        const customContainer = document.createElement('div');
+        customContainer.className = 'custom-emojis-container';
+        customContainer.style.display = 'flex';
+        customContainer.style.flexWrap = 'wrap';
+        customContainer.style.justifyContent = 'flex-start';
+        
+        customEmojis.forEach(emoji => {
+            const div = document.createElement('div');
+            div.className = 'emoji-wrapper';
+            
+            const img = document.createElement('img');
+            img.src = emoji.dataUri || emoji.src;
+            img.alt = emoji.alt || emoji.id;
+            img.dataset.emojiId = emoji.id;
+            
+            // Add the 'emoji' class to match Twitter emojis styling
+            img.className = 'emoji';
+            
+            if (selectedEmojiIds.has(emoji.id)) {
+                img.classList.add('selected-emoji');
+            }
+            
+            img.onclick = function() {
+                // Use the already available SVG content
+                const svgContent = emoji.svgContent;
+                
+                // Toggle selection
+                if (img.classList.contains('selected-emoji')) {
+                    img.classList.remove('selected-emoji');
+                    selectedEmojiIds.delete(emoji.id);
+                    
+                    // Remove from selectedEmojis
+                    const index = selectedEmojis.findIndex(svg => svg === svgContent);
+                    if (index !== -1) {
+                        selectedEmojis.splice(index, 1);
+                    }
+                } else {
+                    img.classList.add('selected-emoji');
+                    selectedEmojiIds.add(emoji.id);
+                    selectedEmojis.push(svgContent);
+                }
+            };
+            
+            img.onload = function() {
+                console.log(`Figma emoji dimensions - Natural: ${img.naturalWidth}x${img.naturalHeight}, Rendered: ${img.width}x${img.height}, Style: ${getComputedStyle(img).width}x${getComputedStyle(img).height}`);
+            };
+            
+            div.appendChild(img);
+            customContainer.appendChild(div);
+        });
+        
+        // Insert custom emojis at the top of the container
+        if (container.firstChild) {
+            container.insertBefore(customContainer, container.firstChild);
+        } else {
+            container.appendChild(customContainer);
+        }
+    }
+    
+    // Click handler for regular emojis using event delegation
+    container.onclick = (e) => {
+        const emojiWrapper = e.target.closest('img:not([data-emoji-id])');
+        if (emojiWrapper) {
+            fetch(emojiWrapper.src)
+                .then(r => r.text())
+                .then(svgContent => {
+                    toggleEmojiSelection(emojiWrapper, svgContent);
+                })
+                .catch(err => console.error('Error fetching SVG:', err));
+        }
+    };
 };
 
 // Update fetchImg function to handle SVG content consistently
@@ -362,8 +299,14 @@ const fetchEmojiUnicodes = () => {
                 return emoji.category.substr(0, emoji.category.indexOf('(')).trim();
             });
 
-            // Add our custom Design Tools category
-            emojiUnicodeList['Design Tools'] = designToolsEmojis;
+            // Add the Figma emoji to Activities instead
+            if (emojiUnicodeList['Activities']) {
+                // Add our Figma emoji to the Activities category
+                emojiUnicodeList['Activities'] = emojiUnicodeList['Activities'].concat(designToolsEmojis);
+            } else {
+                // If Activities category doesn't exist for some reason, create it
+                emojiUnicodeList['Activities'] = designToolsEmojis;
+            }
 
             // Create tabs for each category
             for (const key in emojiUnicodeList) {
