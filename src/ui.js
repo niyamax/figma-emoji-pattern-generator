@@ -1,27 +1,12 @@
 import './ui.css';
 import _ from "lodash";
 import $ from "jquery";
+import figmaSvgContent from '../assets/additional_emojis/figma.svg?raw';
 
 let emojiUnicodeList = [];
 let selectedEmojis = []; // Array to store selected emoji SVGs
 const emojiCache = new Map(); // For caching parsed emojis
 let selectedEmojiIds = new Set(); // Track selected emoji IDs
-
-// Replace the designToolsEmojis definition with inline SVG content
-const figmaSvgContent = `<svg width="23.82" height="35.14" viewBox="0 0 61 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g clip-path="url(#clip0_57_8)">
-  <path d="M15.5 90C23.78 90 30.5 83.28 30.5 75V60H15.5C7.22 60 0.5 66.72 0.5 75C0.5 83.28 7.22 90 15.5 90Z" fill="#0ACF83"/>
-  <path d="M0.5 45C0.5 36.72 7.22 30 15.5 30H30.5V60H15.5C7.22 60 0.5 53.28 0.5 45Z" fill="#A259FF"/>
-  <path d="M0.5 15C0.5 6.72 7.22 0 15.5 0H30.5V30H15.5C7.22 30 0.5 23.28 0.5 15Z" fill="#F24E1E"/>
-  <path d="M30.5 0H45.5C53.78 0 60.5 6.72 60.5 15C60.5 23.28 53.78 30 45.5 30H30.5V0Z" fill="#FF7262"/>
-  <path d="M60.5 45C60.5 53.28 53.78 60 45.5 60C37.22 60 30.5 53.28 30.5 45C30.5 36.72 37.22 30 45.5 30C53.78 30 60.5 36.72 60.5 45Z" fill="#1ABCFE"/>
-  </g>
-  <defs>
-  <clipPath id="clip0_57_8">
-  <rect width="60.012" height="90" fill="white" transform="translate(0.493896)"/>
-  </clipPath>
-  </defs>
-</svg>`;
 
 // Create a data URI from the SVG content
 const figmaSvgDataUri = `data:image/svg+xml;base64,${btoa(figmaSvgContent)}`;
@@ -30,15 +15,6 @@ const figmaSvgDataUri = `data:image/svg+xml;base64,${btoa(figmaSvgContent)}`;
 const designToolsEmojis = [
   { id: 'figma', dataUri: figmaSvgDataUri, svgContent: figmaSvgContent, alt: 'Figma' }
 ];
-
-// In your emoji categories array or object, add the new category
-// const emojiCategories = [
-//   // ... existing categories ...
-//   {
-//     name: 'Design Tools',
-//     emojis: designToolsEmojis
-//   }
-// ];
 
 $(function() {
     fetchEmojiUnicodes();
@@ -121,7 +97,6 @@ const populateEmojis = (list) => {
 
     // Check if we're dealing with custom emojis with dataUri (our design tools)
     if (list && list.length > 0 && list[0].dataUri) {
-        console.log("Loading custom emojis with dataUri");
         
         list.forEach(emoji => {
             const div = document.createElement('div');
